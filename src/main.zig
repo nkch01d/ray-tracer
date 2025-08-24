@@ -1,10 +1,16 @@
 const std = @import("std");
 
-var stdout_buffer: [1024]u8 = undefined;
+var stdout_buffer: [5120]u8 = undefined;
 var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
 const stdout = &stdout_writer.interface;
 
 const Color = struct {
+    const BLACK = Color{ .r = 0, .g = 0, .b = 0 };
+    const WHITE = Color{ .r = 255, .g = 255, .b = 255 };
+    const BLUE = Color{ .r = 0, .g = 0, .b = 255 };
+    const GREEN = Color{ .r = 0, .g = 255, .b = 0 };
+    const RED = Color{ .r = 255, .g = 0, .b = 0 };
+
     r: u8,
     g: u8,
     b: u8,
@@ -17,7 +23,8 @@ const Image = struct {
 
     pub fn setColor(self: Image, x: u16, y: u16, color: Color) void {
         if (x >= self.width or y >= self.height) return;
-        self.pixels[self.width * y + x] = color;
+        const index: usize = @as(usize, self.width) * @as(usize, y) + @as(usize, x);
+        self.pixels[index] = color;
     }
 
     pub fn fillWithColor(self: *Image, color: Color) void {
@@ -28,19 +35,10 @@ const Image = struct {
 
     pub fn getPixel(self: Image, x: u16, y: u16) ?Color {
         if (x >= self.width or y >= self.height) return null;
-        return self.pixels[self.width * y + x];
+        const index: usize = @as(usize, self.width) * @as(usize, y) + @as(usize, x);
+        return self.pixels[index];
     }
 };
-
-fn drawImage(image: Image) void {
-    for (0..image.height) |y| {
-        for (0..image.width) |x| {
-            const color: u8 = image.getPixel(@intCast(x), @intCast(y)).?;
-            std.debug.print("{c}", .{color});
-        }
-        std.debug.print("\n", .{});
-    }
-}
 
 const Circle = struct {
     x: u16,
@@ -68,6 +66,29 @@ fn drawFilledCircle(image: Image, circle: Circle, color: Color) void {
     }
 }
 
+fn drawFilledHorizontalGradientCircle(image: Image, circle: Circle, gradientBegin: Color, gradientEnd: Color) void {
+    for (0..image.height) |y| {
+        for (0..image.width) |x| {
+            const xi: u16 = @intCast(x);
+            const yi: u16 = @intCast(y);
+            if (circle.containsPoint(xi, yi)) {
+                // TODO: fix me
+                // First we need to find x coordinate in terms of coordinate spaces of the circle (can be negative)
+                const x_circle: i32 = @as(i32, @as(i32, @intCast(circle.x)) - @as(i32, @intCast(x)));
+                const width = circle.r * 2;
+
+                // const some_var: f32 = if (x_circle >= 0) 0.5 else 0;
+                const percent: f32 = @abs(@as(f32, @floatFromInt(x_circle)) / @as(f32, @floatFromInt(width - 1)));
+
+                const r = gradientBegin.r + @as(u8, @intFromFloat(@as(f32, @floatFromInt(gradientEnd.r - gradientBegin.r)) * percent));
+                const g = gradientBegin.g + @as(u8, @intFromFloat(@as(f32, @floatFromInt(gradientEnd.g - gradientBegin.g)) * percent));
+                const b = gradientBegin.b + @as(u8, @intFromFloat(@as(f32, @floatFromInt(gradientEnd.b - gradientBegin.b)) * percent));
+                image.setColor(xi, yi, .{ .r = r, .g = g, .b = b });
+            }
+        }
+    }
+}
+
 fn outputImageInPPM(image: Image) !void {
     const magicNumber = "P3";
     const maxChannelValue = 255;
@@ -80,19 +101,20 @@ fn outputImageInPPM(image: Image) !void {
             try stdout.print("{d} {d} {d}\n", .{ pixel.r, pixel.g, pixel.b });
         }
     }
+    try stdout.flush();
 }
 
 pub fn main() !void {
-    const width = 150;
-    const height = 150;
+    const width = 1024;
+    const height = 1024;
 
+    // TODO: we should use allocator for that, when we will need to support user defined sizes
     var colors: [width * height]Color = undefined;
     var image = Image{ .width = width, .height = height, .pixels = &colors };
-    image.fillWithColor(.{ .r = 0, .g = 255, .b = 0 });
+    image.fillWithColor(Color.WHITE);
 
-    // x^2 + y^2 = r^2
-    const circle = Circle{ .x = 50, .y = 50, .r = 30 };
-    drawFilledCircle(image, circle, .{ .r = 255, .g = 255, .b = 255 });
+    const circle = Circle{ .x = 500, .y = 500, .r = 200 };
+    drawFilledHorizontalGradientCircle(image, circle, Color.RED, Color.WHITE);
 
     try outputImageInPPM(image);
 }
