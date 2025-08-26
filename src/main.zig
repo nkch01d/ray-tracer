@@ -16,24 +16,24 @@ const Color = struct {
     b: u8,
 };
 
-const Image = struct {
+const Canvas = struct {
     width: u16,
     height: u16,
     pixels: []Color,
 
-    pub fn setColor(self: Image, x: u16, y: u16, color: Color) void {
+    pub fn setColor(self: Canvas, x: u16, y: u16, color: Color) void {
         if (x >= self.width or y >= self.height) return;
         const index: usize = @as(usize, self.width) * @as(usize, y) + @as(usize, x);
         self.pixels[index] = color;
     }
 
-    pub fn fillWithColor(self: *Image, color: Color) void {
+    pub fn fillWithColor(self: *Canvas, color: Color) void {
         for (self.pixels) |*pixel| {
             pixel.* = color;
         }
     }
 
-    pub fn fillWithHorizontalGradientColor(self: *Image, gradientBegin: Color, gradientEnd: Color) void {
+    pub fn fillWithHorizontalGradientColor(self: *Canvas, gradientBegin: Color, gradientEnd: Color) void {
         for (0..self.height) |y| {
             for (0..self.width) |x| {
                 const percent: f32 = @as(f32, @floatFromInt(x)) / @as(f32, @floatFromInt(self.width));
@@ -45,7 +45,7 @@ const Image = struct {
         }
     }
 
-    pub fn getPixel(self: Image, x: u16, y: u16) ?Color {
+    pub fn getPixel(self: Canvas, x: u16, y: u16) ?Color {
         if (x >= self.width or y >= self.height) return null;
         const index: usize = @as(usize, self.width) * @as(usize, y) + @as(usize, x);
         return self.pixels[index];
@@ -66,21 +66,21 @@ const Circle = struct {
     }
 };
 
-fn drawFilledCircle(image: Image, circle: Circle, color: Color) void {
-    for (0..image.height) |y| {
-        for (0..image.width) |x| {
+fn drawFilledCircle(canvas: Canvas, circle: Circle, color: Color) void {
+    for (0..canvas.height) |y| {
+        for (0..canvas.width) |x| {
             const xi: u16 = @intCast(x);
             const yi: u16 = @intCast(y);
             if (circle.containsPoint(xi, yi)) {
-                image.setColor(xi, yi, color);
+                canvas.setColor(xi, yi, color);
             }
         }
     }
 }
 
-fn drawFilledHorizontalGradientCircle(image: Image, circle: Circle, gradientBegin: Color, gradientEnd: Color) void {
-    for (0..image.height) |y| {
-        for (0..image.width) |x| {
+fn drawFilledHorizontalGradientCircle(canvas: Canvas, circle: Circle, gradientBegin: Color, gradientEnd: Color) void {
+    for (0..canvas.height) |y| {
+        for (0..canvas.width) |x| {
             const xi: u16 = @intCast(x);
             const yi: u16 = @intCast(y);
             if (circle.containsPoint(xi, yi)) {
@@ -97,21 +97,21 @@ fn drawFilledHorizontalGradientCircle(image: Image, circle: Circle, gradientBegi
                 const r = @as(u8, @intCast(@as(i16, gradientBegin.r) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.r) - @as(i32, gradientBegin.r))) * percent))));
                 const g = @as(u8, @intCast(@as(i16, gradientBegin.g) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.g) - @as(i32, gradientBegin.g))) * percent))));
                 const b = @as(u8, @intCast(@as(i16, gradientBegin.b) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.b) - @as(i32, gradientBegin.b))) * percent))));
-                image.setColor(xi, yi, .{ .r = r, .g = g, .b = b });
+                canvas.setColor(xi, yi, .{ .r = r, .g = g, .b = b });
             }
         }
     }
 }
 
-fn outputImageInPPM(image: Image) !void {
+fn outputCanvasInPPM(canvas: Canvas) !void {
     const magicNumber = "P3";
     const maxChannelValue = 255;
     try stdout.print("{s}\n", .{magicNumber});
-    try stdout.print("{d} {d}\n", .{ image.width, image.height });
+    try stdout.print("{d} {d}\n", .{ canvas.width, canvas.height });
     try stdout.print("{d}\n", .{maxChannelValue});
-    for (0..image.height) |y| {
-        for (0..image.width) |x| {
-            const pixel = image.getPixel(@intCast(x), @intCast(y)).?;
+    for (0..canvas.height) |y| {
+        for (0..canvas.width) |x| {
+            const pixel = canvas.getPixel(@intCast(x), @intCast(y)).?;
             try stdout.print("{d} {d} {d}\n", .{ pixel.r, pixel.g, pixel.b });
         }
     }
@@ -124,11 +124,11 @@ pub fn main() !void {
 
     // TODO: we should use allocator for that, when we will need to support user defined sizes
     var colors: [width * height]Color = undefined;
-    var image = Image{ .width = width, .height = height, .pixels = &colors };
-    image.fillWithHorizontalGradientColor(Color.WHITE, Color.RED);
+    var canvas = Canvas{ .width = width, .height = height, .pixels = &colors };
+    canvas.fillWithHorizontalGradientColor(Color.WHITE, Color.RED);
 
     const circle = Circle{ .x = 500, .y = 500, .r = 200 };
-    drawFilledHorizontalGradientCircle(image, circle, Color.WHITE, Color.RED);
+    drawFilledHorizontalGradientCircle(canvas, circle, Color.WHITE, Color.RED);
 
-    try outputImageInPPM(image);
+    try outputCanvasInPPM(canvas);
 }
