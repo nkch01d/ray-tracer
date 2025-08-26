@@ -63,7 +63,7 @@ const Canvas = struct {
         }
     }
 
-    fn drawFilledHorizontalGradientCircle(self: Canvas, circle: Circle, gradientBegin: Color, gradientEnd: Color) void {
+    pub fn drawFilledHorizontalGradientCircle(self: Canvas, circle: Circle, gradientBegin: Color, gradientEnd: Color) void {
         for (0..self.height) |y| {
             for (0..self.width) |x| {
                 const xi: u16 = @intCast(x);
