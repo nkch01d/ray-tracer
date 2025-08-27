@@ -51,6 +51,19 @@ const Canvas = struct {
         }
     }
 
+    // TODO: make same for vertical gradient
+    pub fn fillWithVerticalGradientColor(self: *Canvas, gradientBegin: Color, gradientEnd: Color) void {
+        for (0..self.height) |y| {
+            for (0..self.width) |x| {
+                const percent: f32 = @as(f32, @floatFromInt(y)) / @as(f32, @floatFromInt(self.width));
+                const r = @as(u8, @intCast(@as(i16, gradientBegin.r) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.r) - @as(i32, gradientBegin.r))) * percent))));
+                const g = @as(u8, @intCast(@as(i16, gradientBegin.g) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.g) - @as(i32, gradientBegin.g))) * percent))));
+                const b = @as(u8, @intCast(@as(i16, gradientBegin.b) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.b) - @as(i32, gradientBegin.b))) * percent))));
+                self.setColor(@intCast(x), @intCast(y), .{ .r = r, .g = g, .b = b });
+            }
+        }
+    }
+
     pub fn drawFilledCircle(self: Canvas, circle: Circle, color: Color) void {
         for (0..self.height) |y| {
             for (0..self.width) |x| {
@@ -125,7 +138,7 @@ pub fn main() !void {
     // TODO: we should use allocator for that, when we will need to support user defined sizes
     var colors: [width * height]Color = undefined;
     var canvas = Canvas{ .width = width, .height = height, .pixels = &colors };
-    canvas.fillWithHorizontalGradientColor(Color.WHITE, Color.RED);
+    canvas.fillWithVerticalGradientColor(Color.WHITE, Color.RED);
 
     const circle = Circle{ .x = 500, .y = 500, .r = 200 };
     canvas.drawFilledHorizontalGradientCircle(circle, Color.WHITE, Color.RED);
