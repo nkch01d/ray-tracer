@@ -131,6 +131,58 @@ fn outputCanvasInPPM(canvas: Canvas) !void {
     try stdout.flush();
 }
 
+// TODO: think about using @Vector with SIMD optimizations in the future
+pub fn Vec3(comptime T: type) type {
+    return struct {
+        x: T,
+        y: T,
+        z: T,
+
+        const Self = @This();
+
+        pub fn init(x: T, y: T, z: T) Self {
+            return Self{ .x = x, .y = y, .z = z };
+        }
+
+        pub fn add(a: Self, b: Self) Self {
+            return Self{ .x = a.x + b.x, .y = a.y + b.y, .z = a.z + b.z };
+        }
+
+        pub fn sub(a: Self, b: Self) Self {
+            return Self{ .x = a.x - b.x, .y = a.y - b.y, .z = a.z - b.z };
+        }
+
+        pub fn scale(a: Self, scalar: T) Self {
+            return Self{ .x = a.x * scalar, .y = a.y * scalar, .z = a.z * scalar };
+        }
+
+        pub fn addMut(self: *Self, other: Self) void {
+            self.x += other.x;
+            self.y += other.y;
+            self.z += other.z;
+        }
+
+        pub fn subMut(self: Self, other: Self) void {
+            self.x -= other.x;
+            self.y -= other.y;
+            self.z -= other.z;
+        }
+
+        pub fn scaleMut(self: Self, scalar: T) void {
+            self.x *= scalar;
+            self.y *= scalar;
+            self.z *= scalar;
+        }
+
+        pub fn dot(a: Self, b: Self) T {
+            return a.x * b.x + a.y * b.y + a.z * b.z;
+        }
+    };
+}
+
+const Vec3f = Vec3(f32);
+const Vec3i = Vec3(i32);
+
 pub fn main() !void {
     const width = 1024;
     const height = 1024;
