@@ -183,6 +183,32 @@ pub fn Vec3(comptime T: type) type {
 const Vec3f = Vec3(f32);
 const Vec3i = Vec3(i32);
 
+const Shape = union(enum) {
+    sphere: Sphere,
+};
+
+const Sphere = struct {
+    pos: Vec3i,
+    r: u32,
+};
+
+const Camera = struct {
+    pos: Vec3i,
+};
+
+const Scene = struct {
+    camera: Camera,
+    shapes: []Shape,
+};
+
+const Renderer = struct {
+    scene: Scene,
+    canvas: Canvas,
+
+    const Self = @This();
+    pub fn renderWithRayTracing(_: Self) void {}
+};
+
 pub fn main() !void {
     const width = 1024;
     const height = 1024;
