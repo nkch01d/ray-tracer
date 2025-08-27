@@ -42,6 +42,7 @@ const Canvas = struct {
     pub fn fillWithHorizontalGradientColor(self: *Canvas, gradientBegin: Color, gradientEnd: Color) void {
         for (0..self.height) |y| {
             for (0..self.width) |x| {
+                // TODO: let's try to reduce the number of casts, cuz it looks gross
                 const percent: f32 = @as(f32, @floatFromInt(x)) / @as(f32, @floatFromInt(self.width));
                 const r = @as(u8, @intCast(@as(i16, gradientBegin.r) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.r) - @as(i32, gradientBegin.r))) * percent))));
                 const g = @as(u8, @intCast(@as(i16, gradientBegin.g) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.g) - @as(i32, gradientBegin.g))) * percent))));
@@ -51,10 +52,10 @@ const Canvas = struct {
         }
     }
 
-    // TODO: make same for vertical gradient
     pub fn fillWithVerticalGradientColor(self: *Canvas, gradientBegin: Color, gradientEnd: Color) void {
         for (0..self.height) |y| {
             for (0..self.width) |x| {
+                // TODO: let's try to reduce the number of casts, cuz it looks gross
                 const percent: f32 = @as(f32, @floatFromInt(y)) / @as(f32, @floatFromInt(self.width));
                 const r = @as(u8, @intCast(@as(i16, gradientBegin.r) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.r) - @as(i32, gradientBegin.r))) * percent))));
                 const g = @as(u8, @intCast(@as(i16, gradientBegin.g) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.g) - @as(i32, gradientBegin.g))) * percent))));
@@ -82,16 +83,19 @@ const Canvas = struct {
                 const xi: u16 = @intCast(x);
                 const yi: u16 = @intCast(y);
                 if (circle.containsPoint(xi, yi)) {
-                    // First we need to find x coordinate in terms of coordinate spaces of the circle (can be negative)
+                    // Basically we just found relative x coordinate to the middle leftmost circle point
                     const circle_left = @as(i32, circle.x) - @as(i32, circle.r);
                     const x_relative: i32 = @as(i32, @intCast(x)) - circle_left;
                     const width = circle.r * 2;
-
                     const percent: f32 = @as(f32, @floatFromInt(x_relative)) / @as(f32, @floatFromInt(width));
+
+                    // TODO: analyze why this approach didn't work
+                    // remove these comments when you understand the problem that was with this approach
                     // Because we are using x coordinate of the circle coordinate space, the percent value varies in range [-1;1]
                     // So we need to normalize the percent value to be in range [0;1] to apply gradient
                     // const normalized_percent: f32 = (percent + 1) / 2;
 
+                    // TODO: same with huge amount of casts here, figure out how to make this more clean
                     const r = @as(u8, @intCast(@as(i16, gradientBegin.r) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.r) - @as(i32, gradientBegin.r))) * percent))));
                     const g = @as(u8, @intCast(@as(i16, gradientBegin.g) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.g) - @as(i32, gradientBegin.g))) * percent))));
                     const b = @as(u8, @intCast(@as(i16, gradientBegin.b) + @as(i16, @intFromFloat(@as(f32, @floatFromInt(@as(i32, gradientEnd.b) - @as(i32, gradientBegin.b))) * percent))));
